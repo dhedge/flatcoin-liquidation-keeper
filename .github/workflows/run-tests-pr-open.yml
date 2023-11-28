@@ -1,0 +1,25 @@
+name: Run tests when a PR is opened
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: 'yarn'
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile
+      - name: Run Tests
+        # define environment variables
+        env:
+          CI: true
+        run: yarn test:e2e
