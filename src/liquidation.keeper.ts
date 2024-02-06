@@ -72,7 +72,7 @@ export class LiquidationKeeper {
         this.logger.log(`currentEthPrice ${formatTokenBalance(this.currentEthPrice, 2)}, positionTopLiqPrice ${formatTokenBalance(BigNumber.from(positionWithTopLiqPrice.liqPrice), 2,)} liquidationBufferRatio ${this.liquidationBufferRatio}, priceRatioOfTopPosition ${priceRatioOfTopPosition}`,);
         if (this.liquidationBufferRatio > priceRatioOfTopPosition) {
           this.logger.log(`priceRatioOfTopPosition more then ${this.liquidationBufferRatio}, start checking all positions to be liquidated ...`);
-          await this.checkAndLiquidatePositions(positions);
+          await this.checkAndLiquidatePositions(this.filterPositions(positions));
         }
       }
       this.logger.log(`liquidation keeper executed in ${Date.now() - startTime} ms `);
@@ -134,5 +134,10 @@ export class LiquidationKeeper {
     } catch (error) {
       this.logger.error('failed to update current eth price', error);
     }
+  }
+
+  //get all positions with liq price lower 10% then current price
+  private filterPositions(positions: Position[]): Position[] {
+    return positions.filter((p) => !this.activeKeeperTasks[p.tokenId] && p.liqPrice > this.currentEthPrice.mul(90).div(100).toBigInt());
   }
 }
