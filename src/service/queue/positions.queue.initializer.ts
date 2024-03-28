@@ -4,11 +4,11 @@ import { chunk } from 'lodash';
 import { BigNumber } from 'ethers';
 import { delay } from '../../utils/utils';
 import { AppTxExecutorService } from '../app-tx-executor.service';
-import { PositionRepository } from '../../repostory/position.repository';
+import { PositionRepository } from '../../repository/position.repository';
 import { PositionsQueue } from './positions.queue';
 import { PositionsQueueProvider } from './positions-queue.provider';
 import { ErrorHandler } from '../error.handler';
-import { PositionEntity } from '../../repostory/entity/position-entity';
+import { PositionEntity } from '../../repository/entity/position-entity';
 
 @Injectable()
 export class PositionsQueueInitializer {

@@ -7,15 +7,13 @@ import { Position } from './dto/position';
 import { delay } from './utils/utils';
 import { AppTxExecutorService } from './service/app-tx-executor.service';
 import { Cron } from '@nestjs/schedule';
-import { PositionRepository } from './repostory/position.repository';
+import { PositionRepository } from './repository/position.repository';
 
 @Injectable()
 export class UpdateLiqPriceTask {
   private readonly positionsQueue: PositionsQueue;
 
-  // Maximum number of batches for rpc batch requests.
   private readonly maxBatchSizeForRpcBatchRequest;
-  // Wait time between batches to process the next.
   private readonly batchWaitTime;
 
   constructor(

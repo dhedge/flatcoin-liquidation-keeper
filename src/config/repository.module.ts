@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { ConfigModule } from '@nestjs/config';
 
-import { PositionEntity } from '../repostory/entity/position-entity';
+import { PositionEntity } from '../repository/entity/position-entity';
 
 @Module({
   imports: [

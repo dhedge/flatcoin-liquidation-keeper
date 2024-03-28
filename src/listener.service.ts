@@ -7,10 +7,10 @@ import { createInterfaceInstance } from './contracts/helpers';
 import { Position } from './dto/position';
 import { PositionsQueue } from './service/queue/positions.queue';
 import { PositionsQueueProvider } from './service/queue/positions-queue.provider';
-import { PositionRepository } from './repostory/position.repository';
+import { PositionRepository } from './repository/position.repository';
 import { AppTxExecutorService } from './service/app-tx-executor.service';
 import { ErrorHandler } from './service/error.handler';
-import { PositionEntity } from './repostory/entity/position-entity';
+import { PositionEntity } from './repository/entity/position-entity';
 
 @Injectable()
 export class ListenerService {

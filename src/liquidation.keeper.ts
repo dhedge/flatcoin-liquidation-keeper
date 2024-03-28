@@ -5,7 +5,7 @@ import { PositionsQueue } from './service/queue/positions.queue';
 import { PositionsQueueProvider } from './service/queue/positions-queue.provider';
 import { AppTxExecutorService } from './service/app-tx-executor.service';
 import { chunk } from 'lodash';
-import { PositionRepository } from './repostory/position.repository';
+import { PositionRepository } from './repository/position.repository';
 import { Position } from './dto/position';
 import { BigNumber } from 'ethers';
 import { ETHER_UNIT } from './constants/contstants';
@@ -21,13 +21,8 @@ export class LiquidationKeeper {
   private currentEthPrice: BigNumber;
   private ethPriceUpdateAt = 0;
 
-  // Maximum number of liquidations to execute in parallel per batch.
   private readonly maxBatchSizeForLiquidationQueue;
-
-  // Maximum number of batches for rpc batch requests.
   private readonly maxBatchSizeForRpcBatchRequest;
-
-  // Wait time between batches to process the next.
   private readonly batchWaitTime;
 
   private readonly ethPriceRefreshIntervalSec;

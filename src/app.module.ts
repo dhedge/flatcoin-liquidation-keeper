@@ -8,9 +8,9 @@ import { PositionsAvlQueue } from './service/queue/positions-avl-queue';
 import { PositionsQueueProvider } from './service/queue/positions-queue.provider';
 import { UpdateLiqPriceTask } from './update-liq-price.task';
 import { ConfigModule } from '@nestjs/config';
-import { PositionRepository } from './repostory/position.repository';
+import { PositionRepository } from './repository/position.repository';
 
-import { PositionEntity } from './repostory/entity/position-entity';
+import { PositionEntity } from './repository/entity/position-entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ListenerService } from './listener.service';
 import { AppTxExecutorService } from './service/app-tx-executor.service';
