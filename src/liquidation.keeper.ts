@@ -46,12 +46,11 @@ export class LiquidationKeeper {
   async executeKeeper() {
     try {
       const startTime = Date.now();
-      this.logger.log('start liquidation keeper ... ');
       const positions = this.positionsQueue.getAllPositions();
       const positionsUnknownLiqPrice = this.positionsQueue.getAllPositionsUnknownLiqPrice();
-      this.logger.log(`in queue ${positions.length} positions and ${positionsUnknownLiqPrice.length} positionsUnknownLiqPrice`);
 
       if (positionsUnknownLiqPrice.length) {
+        this.logger.log(`in queue ${positionsUnknownLiqPrice.length} positionsUnknownLiqPrice`);
         this.logger.log('start checking if can be liquidated positions with unknown liqPrice ... ');
         await this.checkAndLiquidatePositions(positionsUnknownLiqPrice);
       }
@@ -64,9 +63,13 @@ export class LiquidationKeeper {
           4,
         );
 
-        this.logger.log(`currentEthPrice ${formatTokenBalance(this.currentEthPrice, 2)}, positionTopLiqPrice ${formatTokenBalance(BigNumber.from(positionWithTopLiqPrice.liqPrice), 2,)} liquidationBufferRatio ${this.liquidationBufferRatio}, priceRatioOfTopPosition ${priceRatioOfTopPosition}`,);
         if (this.liquidationBufferRatio > priceRatioOfTopPosition) {
-          this.logger.log(`priceRatioOfTopPosition more then ${this.liquidationBufferRatio}, start checking all positions to be liquidated ...`);
+          this.logger.log(
+            `in queue ${positions.length}, currentEthPrice ${formatTokenBalance(this.currentEthPrice, 2)}, positionTopLiqPrice ${formatTokenBalance(
+              BigNumber.from(positionWithTopLiqPrice.liqPrice),
+              2,
+            )} liquidationBufferRatio ${this.liquidationBufferRatio},priceRatioOfTopPosition ${priceRatioOfTopPosition}`,
+          );
           await this.checkAndLiquidatePositions(this.filterPositions(positions));
         }
       }
@@ -81,9 +84,11 @@ export class LiquidationKeeper {
       const canBeLiquidatedBatched = await this.appTxExecutorService.canBeLiquidatedBatched(batch.map((p) => p.tokenId));
       const positionsCanBeLiquidated = canBeLiquidatedBatched.filter((p) => p.canBeLiquidated).map((p) => p.tokenId);
       this.logger.log(`${positionsCanBeLiquidated.length} positions can be liquidated, ids ${positionsCanBeLiquidated} ...`);
+      let nonce = await this.appTxExecutorService.getNonce();
       for (const batchPositionsCanBeLiquidated of chunk(positionsCanBeLiquidated, this.maxBatchSizeForLiquidationQueue)) {
         const batches = batchPositionsCanBeLiquidated.map((tokenId) => {
-          this.execAsyncKeeperCallback(tokenId, () => this.liquidatePosition(tokenId));
+          this.execAsyncKeeperCallback(tokenId, () => this.liquidatePosition(tokenId, nonce));
+          nonce++;
         });
         await Promise.all(batches);
         await delay(100);
@@ -91,10 +96,10 @@ export class LiquidationKeeper {
     }
   }
 
-  private async liquidatePosition(tokenId: number) {
+  private async liquidatePosition(tokenId: number, nonce: number) {
     try {
       const priceFeed = await this.appPriceService.getPriceUpdates();
-      const txHash: string = await this.appTxExecutorService.liquidatePosition(tokenId, priceFeed);
+      const txHash: string = await this.appTxExecutorService.liquidatePosition(tokenId, priceFeed, nonce);
       if (txHash) {
         this.positionsQueue.removePosition(tokenId);
         this.logger.log(`position ${tokenId} was liquidated, txHash ${txHash}`);

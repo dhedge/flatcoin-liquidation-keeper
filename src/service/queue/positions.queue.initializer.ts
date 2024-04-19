@@ -64,8 +64,9 @@ export class PositionsQueueInitializer {
 
       while (fromTokenId < toTokenId) {
         toTokenIdForBatchRequest = fromTokenId + this.maxBatchSizeForRpcBatchRequest;
-        const newPositionsBatch = (await this.appTxExecutorService.getPositionDataBatched(fromTokenId, toTokenIdForBatchRequest))
-          .filter((p) => p.liquidationPrice && !p.liquidationPrice.isZero());
+        const newPositionsBatch = (await this.appTxExecutorService.getPositionDataBatched(fromTokenId, toTokenIdForBatchRequest)).filter(
+          (p) => p.liquidationPrice && !p.liquidationPrice.isZero(),
+        );
         this.logger.log(`fetched ${newPositionsBatch.length} positions via rpc tokenIds ${newPositionsBatch.map((p) => p.tokenId)}`);
         for (const newPosition of newPositionsBatch) {
           const tokenId = newPosition.tokenId.toNumber();

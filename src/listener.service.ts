@@ -1,9 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EthersContract, InjectContractProvider } from 'nestjs-ethers';
 import { Contract } from 'ethers';
-import * as LeverageModule from './contracts/abi/LeverageModule.json';
-import * as LiquidationModule from './contracts/abi/LiquidationModule.json';
-import { createInterfaceInstance } from './contracts/helpers';
+import { LeverageModule } from './contracts/abi/leverage-module';
+import { LiquidationModule } from './contracts/abi/liquidation-module';
 import { Position } from './dto/position';
 import { PositionsQueue } from './service/queue/positions.queue';
 import { PositionsQueueProvider } from './service/queue/positions-queue.provider';
@@ -47,7 +46,7 @@ export class ListenerService {
 
   private listenOnLeverageOpenEvents(leverageModuleContract: Contract) {
     this.logger.log('listening on LeverageOpen events...');
-    leverageModuleContract.on('LeverageOpen', async (account, tokenId, event) => {
+    leverageModuleContract.on('LeverageOpen', async (account, tokenId, entryPrice, event) => {
       try {
         this.logger.log(`new LeverageOpen event...`);
         tokenId = tokenId.toNumber();
@@ -57,13 +56,12 @@ export class ListenerService {
           const liqPrice = await this.txExecutorService.liquidationPrice(tokenId);
           newPosition.liqPrice = liqPrice.toBigInt();
           newPositionEntity.liquidationPrice = liqPrice.toBigInt();
-        }catch (error){
+        } catch (error) {
           this.logger.error(`failed to get liq price for tokenId ${tokenId}`, error);
         }
         this.positionsQueue.addPosition(newPosition);
         await this.positionRepository.save(newPositionEntity);
         this.logger.log(`new position tokenId ${tokenId} added to queue, liq price ${newPosition.liqPrice}`);
-
       } catch (error) {
         await this.errorHandler.handleError(`failed to process LeverageOpen event txHash ${event.transactionHash}`, error);
       }
@@ -72,17 +70,17 @@ export class ListenerService {
 
   private listenOnLeverageModifyEvents(leverageModuleContract: Contract) {
     this.logger.log('listening on LeverageAdjust events...');
-    leverageModuleContract.on('LeverageAdjust', async (tokenId, event) => {
+    leverageModuleContract.on('LeverageAdjust', async (tokenId, averagePrice, adjustPrice, event) => {
       try {
         this.logger.log(`new LeverageAdjust event...`);
         tokenId = tokenId.toNumber();
-        let positionInQueue = this.positionsQueue.getPositionByTokenId(tokenId);
+        const positionInQueue = this.positionsQueue.getPositionByTokenId(tokenId);
 
         try {
           const liqPrice = await this.txExecutorService.liquidationPrice(tokenId);
           positionInQueue.liqPrice = liqPrice.toBigInt();
           await this.positionRepository.updateLiquidationPrice(tokenId, liqPrice.toBigInt());
-        }catch (error){
+        } catch (error) {
           this.logger.error(`failed to get liq price for tokenId ${tokenId}`, error);
           await this.positionRepository.updateLiquidationPrice(tokenId, null);
         }
@@ -96,7 +94,7 @@ export class ListenerService {
 
   private listenOnLeverageCloseEvents(leverageModuleContract: Contract) {
     this.logger.log('listening on LeverageClose events...');
-    leverageModuleContract.on('LeverageClose', async (tokenId, event) => {
+    leverageModuleContract.on('LeverageClose', async (tokenId, closePrice, positionSummary, event) => {
       try {
         this.logger.log(`new leverageClose event...`);
         tokenId = tokenId.toNumber();
@@ -111,7 +109,7 @@ export class ListenerService {
 
   private listenOnPositionLiquidatedEvents(liquidationModuleContract: Contract) {
     this.logger.log('listening on PositionLiquidated events...');
-    liquidationModuleContract.on('PositionLiquidated', async (tokenId, liquidator, liquidationFee, event) => {
+    liquidationModuleContract.on('PositionLiquidated', async (tokenId, liquidator, liquidationFee, closePrice, positionSummary, event) => {
       try {
         this.logger.log(`new PositionLiquidated event...`);
         tokenId = tokenId.toNumber();
