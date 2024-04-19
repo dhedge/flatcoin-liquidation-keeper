@@ -71,9 +71,9 @@ export class LiquidationKeeper {
             )} liquidationBufferRatio ${this.liquidationBufferRatio},priceRatioOfTopPosition ${priceRatioOfTopPosition}`,
           );
           await this.checkAndLiquidatePositions(this.filterPositions(positions));
+          this.logger.log(`liquidation keeper executed in ${Date.now() - startTime} ms `);
         }
       }
-      this.logger.log(`liquidation keeper executed in ${Date.now() - startTime} ms `);
     } catch (error) {
       await this.errorHandler.handleError('error in liquidation keeper', error);
     }
