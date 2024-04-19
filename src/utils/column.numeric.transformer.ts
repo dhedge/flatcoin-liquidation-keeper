@@ -10,7 +10,6 @@ class ColumnBigNumberTransformer {
 
 export const bigNumberTransformer = new ColumnBigNumberTransformer();
 
-
 class ColumnNumericTransformer {
   to(data: number): number {
     return data;

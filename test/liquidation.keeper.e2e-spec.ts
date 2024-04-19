@@ -19,7 +19,7 @@ describe('LiquidationKeeper', () => {
     process.env.MAX_BATCH_SIZE_FOR_RPC_BATCH_REQUEST = '10';
     process.env.ETH_PRICE_UPDATE_INTERVAL = '5';
     process.env.MAX_BATCH_SIZE_FOR_LIQUIDATION_QUEUE = '5';
-    process.env.LIQUIDATION_BUFFER_RATIO="0";
+    process.env.LIQUIDATION_BUFFER_RATIO = '0';
   });
 
   it('should call liquidate position', async () => {
@@ -99,7 +99,11 @@ describe('LiquidationKeeper', () => {
           if (mockMetadata.name === 'AppTxExecutorService') {
             canBeLiquidatedBatchedSpy = jest.fn().mockResolvedValue(canBeLiquidated);
             liquidatePositionSpy = jest.fn().mockResolvedValue('0x012');
-            return { canBeLiquidatedBatched: canBeLiquidatedBatchedSpy, liquidatePosition: liquidatePositionSpy };
+            return {
+              canBeLiquidatedBatched: canBeLiquidatedBatchedSpy,
+              liquidatePosition: liquidatePositionSpy,
+              getNonce: jest.fn().mockReturnValue(1),
+            };
           }
           const Mock = moduleMocker.generateFromMetadata(mockMetadata);
           return new Mock();
