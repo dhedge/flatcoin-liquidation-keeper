@@ -3,7 +3,7 @@ import { EthersContract, InjectContractProvider, InjectEthersProvider } from 'ne
 import { JsonRpcBatchProvider, JsonRpcProvider } from '@ethersproject/providers';
 import { BigNumber, Contract, ethers, Wallet } from 'ethers';
 import { AppPriceService } from './app-price.service';
-import { LiquidationModule } from '../contracts/abi/liquidation-module';
+import { CanLiquidateWithPriceFeeds, Liquidate, LiquidationModule } from '../contracts/abi/liquidation-module';
 import { LeverageModule } from '../contracts/abi/leverage-module';
 import { Viewer } from '../contracts/abi/viewer';
 import { LeveragePositionData } from '../dto/leverage-position-data';
@@ -14,9 +14,11 @@ export class AppTxExecutorService {
   private readonly batchProvider: JsonRpcBatchProvider;
   private readonly signer: Wallet;
   private readonly liquidationModuleContract: Contract;
+  private readonly liquidateContract: Contract;
   private readonly liquidationModuleContractBatch: Contract;
   private readonly leverageModuleContract: Contract;
   private readonly viewerModuleContract: Contract;
+  private readonly canLiquidateBatchedContract: Contract;
 
   constructor(
     @InjectContractProvider()
@@ -30,7 +32,9 @@ export class AppTxExecutorService {
     this.batchProvider = new JsonRpcBatchProvider(process.env.PROVIDER_HTTPS_URL);
     this.signer = new Wallet(process.env.SIGNER_WALLET_PK, this.provider);
     this.liquidationModuleContract = new Contract(process.env.LIQUIDATION_MODULE_CONTRACT_ADDRESS, LiquidationModule, this.signer);
+    this.liquidateContract = new Contract(process.env.LIQUIDATION_MODULE_CONTRACT_ADDRESS, Liquidate, this.signer);
     this.liquidationModuleContractBatch = new Contract(process.env.LIQUIDATION_MODULE_CONTRACT_ADDRESS, LiquidationModule, this.batchProvider);
+    this.canLiquidateBatchedContract = new Contract(process.env.LIQUIDATION_MODULE_CONTRACT_ADDRESS, CanLiquidateWithPriceFeeds, this.batchProvider);
     this.viewerModuleContract = new Contract(process.env.VIEWER_CONTRACT_ADDRESS, Viewer, this.provider);
     this.leverageModuleContract = new Contract(process.env.LEVERAGE_MODULE_CONTRACT_ADDRESS, LeverageModule, this.provider);
   }
@@ -39,7 +43,7 @@ export class AppTxExecutorService {
     this.logger.log(`Liquidating position ${tokenId} ...`);
     let estimated = null;
     try {
-      estimated = await this.liquidationModuleContract.estimateGas.liquidate(tokenId, priceFeedUpdateData, {
+      estimated = await this.liquidateContract.estimateGas.liquidate(tokenId, priceFeedUpdateData, {
         value: '1',
       });
     } catch (error) {
@@ -53,7 +57,7 @@ export class AppTxExecutorService {
 
     const maxPriorityFeePerGas: any = BigNumber.from(await this.maxPriorityFeePerGasWithRetry(3, 500));
 
-    const tx = await this.liquidationModuleContract.liquidate(tokenId, priceFeedUpdateData, {
+    const tx = await this.liquidateContract.liquidate(tokenId, priceFeedUpdateData, {
       gasLimit: ethers.utils.hexlify(estimated.add(estimated.mul(40).div(100))),
       maxPriorityFeePerGas: ethers.utils.hexlify(maxPriorityFeePerGas),
       value: '1',
@@ -67,6 +71,21 @@ export class AppTxExecutorService {
     const batches = [];
     for (let i = 0; i < tokenIds.length; i++) {
       batches.push(this.liquidationModuleContractBatch.canLiquidate(tokenIds[i]));
+    }
+    const results = await Promise.all(batches);
+    const canBeLiquidatedResults: CanBeLiquidatedResult[] = [];
+
+    for (let i = 0; i < tokenIds.length; i++) {
+      const result = { tokenId: tokenIds[i], canBeLiquidated: results[i] };
+      canBeLiquidatedResults.push(result);
+    }
+    return canBeLiquidatedResults;
+  }
+
+  public async canBeLiquidatedBatchedWithPrice(tokenIds: number[], ethPrice: BigNumber): Promise<CanBeLiquidatedResult[]> {
+    const batches = [];
+    for (let i = 0; i < tokenIds.length; i++) {
+      batches.push(this.canLiquidateBatchedContract.canLiquidate(tokenIds[i], ethPrice));
     }
     const results = await Promise.all(batches);
     const canBeLiquidatedResults: CanBeLiquidatedResult[] = [];

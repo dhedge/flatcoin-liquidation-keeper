@@ -3,7 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { AppPriceService } from './service/app-price.service';
 import { PositionsQueue } from './service/queue/positions.queue';
 import { PositionsQueueProvider } from './service/queue/positions-queue.provider';
-import { AppTxExecutorService } from './service/app-tx-executor.service';
+import { AppTxExecutorService, CanBeLiquidatedResult } from './service/app-tx-executor.service';
 import { chunk } from 'lodash';
 import { PositionRepository } from './repository/position.repository';
 import { Position } from './dto/position';
@@ -81,7 +81,7 @@ export class LiquidationKeeper {
 
   private async checkAndLiquidatePositions(positions: Position[]): Promise<void> {
     for (const batch of chunk(positions, this.maxBatchSizeForRpcBatchRequest)) {
-      const canBeLiquidatedBatched = await this.appTxExecutorService.canBeLiquidatedBatched(batch.map((p) => p.tokenId));
+      const canBeLiquidatedBatched = await this.checkPositionsCanBeLiquidated(batch);
       const positionsCanBeLiquidated = canBeLiquidatedBatched.filter((p) => p.canBeLiquidated).map((p) => p.tokenId);
       this.logger.log(`${positionsCanBeLiquidated.length} positions can be liquidated, ids ${positionsCanBeLiquidated} ...`);
       let nonce = await this.appTxExecutorService.getNonce();
@@ -94,6 +94,17 @@ export class LiquidationKeeper {
         await delay(100);
       }
     }
+  }
+
+  private async checkPositionsCanBeLiquidated(positionsBatch: Position[]): Promise<CanBeLiquidatedResult[]> {
+    const isRethPriceFresh = Date.now() - this.ethPriceUpdateAt < 30 * 1000;
+    if (isRethPriceFresh && this.currentEthPrice) {
+      return await this.appTxExecutorService.canBeLiquidatedBatchedWithPrice(
+        positionsBatch.map((p) => p.tokenId),
+        this.currentEthPrice,
+      );
+    }
+    return await this.appTxExecutorService.canBeLiquidatedBatched(positionsBatch.map((p) => p.tokenId));
   }
 
   private async liquidatePosition(tokenId: number, nonce: number) {
@@ -127,7 +138,6 @@ export class LiquidationKeeper {
   private async updateEthPrice() {
     try {
       if (Date.now() - this.ethPriceUpdateAt > this.ethPriceRefreshIntervalSec * 1000) {
-        this.logger.log('start refreshing current eth price ...');
         this.currentEthPrice = await this.appPriceService.getPrice();
         this.ethPriceUpdateAt = Date.now();
       }

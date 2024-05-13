@@ -129,3 +129,30 @@ export const LiquidateWithoutPriceFeeds = [
     type: 'function',
   },
 ];
+
+export const CanLiquidateWithPriceFeeds = [
+  {
+    inputs: [
+      {
+        internalType: 'uint256',
+        name: 'tokenId',
+        type: 'uint256',
+      },
+      {
+        internalType: 'uint256',
+        name: 'price',
+        type: 'uint256',
+      },
+    ],
+    name: 'canLiquidate',
+    outputs: [
+      {
+        internalType: 'bool',
+        name: 'liquidatable',
+        type: 'bool',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+];

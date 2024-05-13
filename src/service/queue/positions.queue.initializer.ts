@@ -51,6 +51,8 @@ export class PositionsQueueInitializer {
           this.logger.log(`position ${r.tokenId} has liq price ${r.liquidationPrice}`);
           if (!BigNumber.from(r.liquidationPrice).isZero()) {
             this.positionsQueue.addPosition(new Position(r.tokenId, BigInt(r.liquidationPrice)));
+          } else {
+            this.positionRepository.delete(r.tokenId);
           }
         });
         await delay(this.batchWaitTime);
