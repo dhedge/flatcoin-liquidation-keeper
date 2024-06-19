@@ -6,6 +6,11 @@
 
 ## Configuration
 
+1. Install Node.js version higher than 18: https://nodejs.org/en/download/package-manager
+2. Install yarn package manager: https://classic.yarnpkg.com/lang/en/docs/install/#windows-stable
+3. Clone project: $ git clone https://github.com/dhedge/flatcoin-liquidation-keeper.git
+4. Install dependencies: $ yarn install
+5. Configure .env file properties:
 
 | Variable                             | Required | Description                                                                                                                                               | Example                                                                                             |
 |--------------------------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
@@ -26,32 +31,5 @@
 | ETH_PRICE_UPDATE_INTERVAL            | Yes      | Interval to update current ETH price, sec                                                                                                                 | 4                                                                                                   |
 | LIQUIDATION_BUFFER_RATIO             | Yes      | Buffer ratio between current ETH price and position with top liquidation price<br/>If lower, all positions are checked for the possibility of liquidation | 0.01                                                                                                |
 
-
-## Installation
-
-```bash
-$ yarn install
-```
-
-## Running the app
-
-```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
-```
-
-## Test
-
-```bash
-# e2e tests
-$ yarn run test:e2e
-
-```
-
+6. Run project: $ yarn run start
 
