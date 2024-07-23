@@ -46,7 +46,7 @@ export class ListenerService {
 
   private listenOnLeverageOpenEvents(leverageModuleContract: Contract) {
     this.logger.log('listening on LeverageOpen events...');
-    leverageModuleContract.on('LeverageOpen', async (account, tokenId, entryPrice, event) => {
+    leverageModuleContract.on('LeverageOpen', async (account, tokenId, entryPrice, margin, size, event) => {
       try {
         this.logger.log(`new LeverageOpen event...`);
         tokenId = tokenId.toNumber();
@@ -70,7 +70,7 @@ export class ListenerService {
 
   private listenOnLeverageModifyEvents(leverageModuleContract: Contract) {
     this.logger.log('listening on LeverageAdjust events...');
-    leverageModuleContract.on('LeverageAdjust', async (tokenId, averagePrice, adjustPrice, event) => {
+    leverageModuleContract.on('LeverageAdjust', async (tokenId, averagePrice, adjustPrice, marginDelta, size, event) => {
       try {
         this.logger.log(`new LeverageAdjust event...`);
         tokenId = tokenId.toNumber();
@@ -94,7 +94,7 @@ export class ListenerService {
 
   private listenOnLeverageCloseEvents(leverageModuleContract: Contract) {
     this.logger.log('listening on LeverageClose events...');
-    leverageModuleContract.on('LeverageClose', async (tokenId, closePrice, positionSummary, event) => {
+    leverageModuleContract.on('LeverageClose', async (tokenId, closePrice, positionSummary, settledMargin, size, event) => {
       try {
         this.logger.log(`new leverageClose event...`);
         tokenId = tokenId.toNumber();
